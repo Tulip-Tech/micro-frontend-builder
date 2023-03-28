@@ -1,0 +1,46 @@
+name: Micro Backend Dev Deployment
+on:
+  push:
+    branches: 'master'
+jobs:
+  push_event:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.3.0
+        with:
+          ref: master
+      - name: Install OpenVPN
+        run: |
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+      - name: Connect to VPN
+        uses: 'kota65535/github-openvpn-connect-action@v2'
+        with:
+          config_file: client.ovpn
+          client_key: ${{ secrets.OVPN_CLIENT_KEY }}
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: 10.217.126.29
+          port: 22
+          username: ubuntu
+          key: ${{ secrets.DEV_SSH_KEY }}
+          script: |
+            if [ -d "micro_frontend_builder" ];then
+            echo "Directory exist"
+            else
+            git clone https://petercipriano-wtv:${{ secrets.GH_TOKEN }}@github.com/Tulip-Tech/micro_frontend_builder.git
+            fi
+            ./deploy-fe-micro.sh
+      - name: google-chat-notification
+        # You may pin to the exact commit or the version.
+        # uses: Co-qn/google-chat-notification@b9227d9daa4638c9782a5bd16c4abb86268127a1
+        uses: Co-qn/google-chat-notification@v1
+        with:
+          # job name.
+          name: Deploy
+          # google chat webhook url.
+          url: https://chat.googleapis.com/v1/spaces/AAAAHF1iHEM/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=wCO_dPF1xP0S-rk7GCzkw6EWBdH4B872G63lLVPw1bo%3D
+          # job status.
+          status: ${{ job.status }}
+        if: always()
