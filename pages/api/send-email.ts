@@ -69,3 +69,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { status, message } = await sendEmailHelper(key, to, subject, text, attachments);
     res.status(status).json({ status, message });
 }
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+}
